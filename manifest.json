@@ -14,7 +14,10 @@
       "contextMenus"
     ],
     "content_scripts": [{
-      "matches": ["https://akizukidenshi.com/catalog/customer/*"],
+      "matches": [
+        "https://akizukidenshi.com/catalog/customer/*",
+        "https://akizukidenshi.com/catalog/cart/*"
+      ],
       "js": [
         "lib.js",
         "jquery-3.6.4.min.js",

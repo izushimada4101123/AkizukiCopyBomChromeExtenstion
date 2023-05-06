@@ -1,7 +1,3 @@
-//var akizukiOrigin = document.location.origin;
-
-//console.log(akizukiOrigin);
-
 function openHistoryTab(document, page) {
   // openfirst page
 //  chrome.tabs.create({ url: akizukiOrigin + "/catalog/customer/history.aspx?" + p + "&ps=50" });
@@ -20,20 +16,18 @@ function openHistoryTab(document, page) {
   */
 }
 
-//openHistoryTab(1);
-
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log(request); // "Hello from background script!"
-//  openHistoryTab(request, 1);
+  // just for debugging
+  console.log(request);
 });
 
-function copyHistory1Items(tab, info) {
-  console.log(info);
+// send a message to contents.js for copy item
+function copyItems(tab, info, messageType) {
+  console.log("copyItems", info);
   let result = chrome.tabs.sendMessage(tab.id, {
-    type: "copyHistory1Items",
+    type: messageType,
     payload: info
   });
-
 
   result
     .then((response) => {
@@ -55,12 +49,24 @@ chrome.runtime.onInstalled.addListener(() => {
       "https://akizukidenshi.com/catalog/customer/historydetail.aspx*"
     ]
   });
+
+  chrome.contextMenus.create({
+    id: "copyCartItems",
+    title: "CopyCartItems",
+    contexts: ["page"],
+    documentUrlPatterns: [
+      "https://akizukidenshi.com/catalog/cart/cart.aspx*"
+    ]
+  });
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   switch(info.menuItemId) {
     case "copyHistory1Items":
-      copyHistory1Items(tab, info);
+      copyItems(tab, info, "copyHistory1Items");
+      break;
+    case "copyCartItems":
+      copyItems(tab, info, "copyCartItems");
       break;
     default:
       break;
