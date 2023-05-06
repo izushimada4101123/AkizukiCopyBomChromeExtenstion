@@ -1,16 +1,13 @@
-var pathname = document.location.pathname;
-var pathname_fields = pathname.split("/");
-var hostURL = document.location.origin;
+const pathname = document.location.pathname;
+const pathname_fields = pathname.split("/");
+const hostURL = document.location.origin;
 
 function copyHistory1Items() {
-    result = "通販コード\t商品名\t数量\t単位\t金額\n"
-    bom_table = $('.history_loop_').not('.order_total_');
-    trs = $(bom_table.get(0)).find('tr');
-
+    let result = "通販コード\t商品名\t数量\t単位\t金額\n"
+    const trs = $('.history_loop_').not('.order_total_').first().find('tr');
 
     for(var index=1;index<trs.length;index++) {
         tds = $(trs[index]).find('td');
-        console.log(/([0-9,]+)(.+)/.exec($(tds[2]).text().replaceAll(",","")))
         result += (
             hostURL + $(tds[0]).find('a').attr('href') + 
             "\t" + $(tds[1]).text() + 
@@ -53,19 +50,13 @@ function copyCartItems() {
   navigator.clipboard.writeText(result);
 }
 
-window.onload = function() {
-  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    console.log("MessageReceived", request);
-    switch(request.type) {
-      case "copyHistory1Items":
-        copyHistory1Items();
-        break;
-      case "copyCartItems":
-        copyCartItems();
-        break;
-      default:
-        break;
-    }
-    return true;
-  });
-};
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  switch(request?.type) {
+    case "copyHistory1Items":
+      copyHistory1Items();
+      break;
+    case "copyCartItems":
+      copyCartItems();
+      break;
+  }
+});
