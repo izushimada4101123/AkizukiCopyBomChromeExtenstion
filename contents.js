@@ -13,15 +13,15 @@ function copyHistory1Items() {
     for(var index=1;index<trs.length;index++) {
         tds = $(trs[index]).find('td');
         result += (
-            order_date + 
-            "\t" + $(order_id_anchor).text() + 
-            "\t" + location.href + 
-            "\t" + $(tds[0]).find('a').attr('href').split('/').slice(-2,-1) + 
-            "\t" + hostURL + $(tds[0]).find('a').attr('href') + 
-            "\t" + $(tds[1]).text() + 
+            order_date +
+            "\t" + $(order_id_anchor).text() +
+            "\t" + location.href +
+            "\t" + $(tds[0]).find('a').attr('href').split('/').slice(-2,-1) +
+            "\t" + hostURL + $(tds[0]).find('a').attr('href') +
+            "\t" + $(tds[1]).text() +
             "\t" + /([0-9,]+)(.+)/.exec($(tds[2]).text().replaceAll(",",""))[1] +
             "\t" + /([0-9,]+)(.+)/.exec($(tds[2]).text().replaceAll(",",""))[2] +
-            "\t" + /([0-9,]+)(.+)/.exec($(tds[3]).text().replaceAll(",",""))[0] + 
+            "\t" + /([0-9,]+)(.+)/.exec($(tds[3]).text().replaceAll(",",""))[0] +
             "\n"
         )
     }
@@ -44,7 +44,7 @@ function copyCartItems() {
     tds = $(row).find("td");
     result += (
       hostURL + $(tds[0]).find('a').attr('href') +
-      "\t" + $(tds[1]).find('a').filter(function() {return $.trim($(this).text()) !== "";}).text() + 
+      "\t" + $(tds[1]).find('a').filter(function() {return $.trim($(this).text()) !== "";}).text() +
       "\t" + /[0-9,]+/.exec($(tds[2]).find('span').text())[0] +
       "\t" + $(tds[3]).find('input').val() +
       "\t" + $(tds[3]).clone().children().remove().end().text().trim() +
@@ -58,6 +58,33 @@ function copyCartItems() {
   navigator.clipboard.writeText(result);
 }
 
+function copyHistoryItems() {
+  let items = $("td.order_id_.order_detail_").find("a")
+
+  var urls = [];
+  for(var item of items) {
+    url = $(item).attr("href");
+    urls.push(url);
+    console.log(url);
+  }
+  sendMessage({"anchors":urls}, "openURL");
+  return true;
+}
+
+async function sendMessage(info, messageType) {
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: messageType,
+      payload: info
+    });
+    console.log(response);
+    return true;
+  } catch (error) {
+    console.log(error);
+    return false;
+  }
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   switch(request?.type) {
     case "copyHistory1Items":
@@ -65,6 +92,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       break;
     case "copyCartItems":
       copyCartItems();
+      break;
+    case "copyHistoryItems":
+      copyHistoryItems();
       break;
   }
 });
