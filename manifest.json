@@ -11,6 +11,8 @@
       "notifications",
       "clipboardWrite",
       "tabs",
+      "storage",
+      "tabGroups",
       "contextMenus"
     ],
     "content_scripts": [{

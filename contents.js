@@ -1,9 +1,11 @@
+console.log(document.location);
 const pathname = document.location.pathname;
-const pathname_fields = pathname.split("/");
+const pathname_fields = pathname?.split("/");
 const hostURL = document.location.origin;
 
-function copyHistory1Items() {
-    let result = "発注日\tOrderID\tOrderURL\t通販コード\t通販コードURL\t商品名\t数量\t単位\t金額\n"
+async function copyHistory1Items(append=false, tab) {
+    let result_header = "発注日\tOrderID\tOrderURL\t通販コード\t通販コードURL\t商品名\t数量\t単位\t金額\n"
+    let result = ""
 
     const order_id_anchor = $('.order_info_.boder_none_ td.order_list_ a');
     const trs = $('.history_loop_').not('.order_total_').first().find('tr');
@@ -28,7 +30,20 @@ function copyHistory1Items() {
 
    console.log(result)
 
-   navigator.clipboard.writeText(result);
+    if (append) {
+      console.log("append");
+      sendMessage({"tab": tab, "header": result_header, "items": result, "id": $(order_id_anchor).text()}, "items");
+    /*
+      if (navigator.clipboard.readText == "") {
+        result = result_header + result;
+      } else {
+        result = await navigator.clipboard.readText() + result;
+      }
+      await navigator.clipboard.writeText(result);
+      */
+    } else {
+      await navigator.clipboard.writeText(result_header + result);
+    }
 }
 
 function copyCartItems() {
@@ -58,7 +73,7 @@ function copyCartItems() {
   navigator.clipboard.writeText(result);
 }
 
-function copyHistoryItems() {
+function copyHistoryItems(tab) {
   let items = $("td.order_id_.order_detail_").find("a")
 
   var urls = [];
@@ -67,7 +82,7 @@ function copyHistoryItems() {
     urls.push(url);
     console.log(url);
   }
-  sendMessage({"anchors":urls}, "openURL");
+  sendMessage({"anchors":urls, "tab":tab}, "openURL");
   return true;
 }
 
@@ -85,16 +100,39 @@ async function sendMessage(info, messageType) {
   }
 }
 
+function writeToClipboard(request) {
+  console.log(request);
+  navigator.clipboard.writeText(request.payload.items);
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   switch(request?.type) {
     case "copyHistory1Items":
       copyHistory1Items();
       break;
-    case "copyCartItems":
+    case "copyHistory1ItemsAdd":
+      copyHistory1Items(true, request?.tab);
+      break;
+     case "copyCartItems":
       copyCartItems();
       break;
     case "copyHistoryItems":
-      copyHistoryItems();
+      copyHistoryItems(request?.tab);
+      break;
+    case "gatheredItems":
+      writeToClipboard(request);
       break;
   }
 });
+
+/*
+chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
+  console.log("contents");
+  // make sure the status is 'complete' and it's the right tab
+  if (tab.url.indexOf('127.0.0.1:8000') != -1 && changeInfo.status == 'complete') {
+      chrome.tabs.executeScript(null, { 
+          code: "alert('hi');" 
+      });
+  }
+});
+*/
