@@ -1,4 +1,3 @@
-console.log(document.location);
 const pathname = document.location.pathname;
 const pathname_fields = pathname?.split("/");
 const hostURL = document.location.origin;
@@ -36,28 +35,7 @@ async function copyHistory1Items(append=false, tab) {
     let result_header = "発注日\tOrderID\tOrderURL\t通販コード\t通販コードURL\t商品名\t数量\t単位\t金額\n"
     let result = ""
 
-    const order_id_anchor = $('.order_info_.boder_none_ td.order_list_ a');
-    const trs = $('.history_loop_').not('.order_total_').first().find('tr');
-    const order_date =
-      $('span.history_title_').parent().first().clone().children().remove().end().text();
-
-    for(var index=1;index<trs.length;index++) {
-        tds = $(trs[index]).find('td');
-        result += (
-            order_date +
-            "\t" + $(order_id_anchor).text() +
-            "\t" + location.href +
-            "\t" + $(tds[0]).find('a').attr('href').split('/').slice(-2,-1) +
-            "\t" + hostURL + $(tds[0]).find('a').attr('href') +
-            "\t" + $(tds[1]).text() +
-            "\t" + /([0-9,]+)(.+)/.exec($(tds[2]).text().replaceAll(",",""))[1] +
-            "\t" + /([0-9,]+)(.+)/.exec($(tds[2]).text().replaceAll(",",""))[2] +
-            "\t" + /([0-9,]+)(.+)/.exec($(tds[3]).text().replaceAll(",",""))[0] +
-            "\n"
-        )
-    }
-
-//   console.log(result)
+    result = await copyHistory1ItemsAAA($(document))
 
     if (append) {
 //      console.log("append");
