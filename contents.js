@@ -40,22 +40,15 @@ async function copyHistory1Items(append=false, tab) {
     if (append) {
 //      console.log("append");
       sendMessage({"tab": tab, "header": result_header, "items": result, "id": $(order_id_anchor).text()}, "items");
-    /*
-      if (navigator.clipboard.readText == "") {
-        result = result_header + result;
-      } else {
-        result = await navigator.clipboard.readText() + result;
-      }
-      await navigator.clipboard.writeText(result);
-      */
     } else {
       await navigator.clipboard.writeText(result_header + result);
     }
 }
 
-function copyCartItems() {
+// extract cart items and copy to clipboard
+function copyCartItems(jquery_object) {
   // https://akizukidenshi.com/catalog/cart/cart.aspx
-  var rows = $(".cart_table")
+  var rows = jquery_object.find(".cart_table")
               .first()
               .find("tr > .cart_tdl")
               .filter(function() {return $.trim($(this).text()) !== "";})
@@ -80,6 +73,12 @@ function copyCartItems() {
   navigator.clipboard.writeText(result);
 }
 
+// copy cartItems
+async function getCatItems() {
+  return getContentViaAjax("/catalog/cart/cart.aspx", {}, copyCartItems);
+}
+
+// ajax function
 async function getContentViaAjax(url, data, parse_func) {
   await $.ajax({
     type: "GET",
@@ -94,29 +93,12 @@ async function getContentViaAjax(url, data, parse_func) {
   return result;
 }
 
-
+// craw 1 item
 async function crawlItems(order_id) {
   return getContentViaAjax(
     "/catalog/customer/historydetail.aspx",{ "order_id": order_id}, 
     parseHistory1Item);
 }
-
-/*
-async function crawlItems2(order_id) {
-  var items = "";
-  await $.ajax({
-    type: "GET",
-    url: "/catalog/customer/historydetail.aspx",
-    data: { "order_id": order_id },
-  }).done(
-    async msg => {
-      items = await parseHistory1Item($(msg));
-    }
-  );
-
-  return items;
-}
-*/
 
 // extract HistoryDetailAnchors from History list
 function getHistoryDetailAnchors(jquery_object) {
@@ -127,12 +109,14 @@ function getHistoryDetailAnchors(jquery_object) {
   return urls;
 }
 
+// crawl history page
 async function crawlHistory(page, itemsPerPage) {
   return getContentViaAjax(
     "/catalog/customer/history.aspx", 
     { p: page, ps: itemsPerPage}, getHistoryDetailAnchors);
 }
 
+//
 async function copyHistoryItems(tab) {
   let items = $("td.order_id_.order_detail_").find("a")
 
@@ -183,7 +167,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       copyHistory1Items(true, request?.tab);
       break;
      case "copyCartItems":
-      copyCartItems();
+        getCatItems();
       break;
     case "copyHistoryItems":
       copyHistoryItems(request?.tab);
