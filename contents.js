@@ -2,7 +2,7 @@ const pathname = document.location.pathname;
 const pathname_fields = pathname?.split("/");
 const hostURL = document.location.origin;
 
-async function copyHistory1ItemsAAA(jquery_object) {
+async function parseHistory1Item(jquery_object) {
 //    let result_header = "発注日\tOrderID\tOrderURL\t通販コード\t通販コードURL\t商品名\t数量\t単位\t金額\n"
   let result = ""
 
@@ -35,7 +35,7 @@ async function copyHistory1Items(append=false, tab) {
     let result_header = "発注日\tOrderID\tOrderURL\t通販コード\t通販コードURL\t商品名\t数量\t単位\t金額\n"
     let result = ""
 
-    result = await copyHistory1ItemsAAA($(document))
+    result = await parseHistory1Item($(document))
 
     if (append) {
 //      console.log("append");
@@ -80,7 +80,29 @@ function copyCartItems() {
   navigator.clipboard.writeText(result);
 }
 
+async function getContentViaAjax(url, data, parse_func) {
+  await $.ajax({
+    type: "GET",
+    url: url,
+    data: data,
+  }).done(
+    async msg => {
+      result = await parse_func($(msg));
+    }
+  );
+
+  return result;
+}
+
+
 async function crawlItems(order_id) {
+  return getContentViaAjax(
+    "/catalog/customer/historydetail.aspx",{ "order_id": order_id}, 
+    parseHistory1Item);
+}
+
+/*
+async function crawlItems2(order_id) {
   var items = "";
   await $.ajax({
     type: "GET",
@@ -88,14 +110,30 @@ async function crawlItems(order_id) {
     data: { "order_id": order_id },
   }).done(
     async msg => {
-      items = await copyHistory1ItemsAAA($(msg));
+      items = await parseHistory1Item($(msg));
     }
   );
 
   return items;
 }
+*/
+
+// extract HistoryDetailAnchors from History list
+function getHistoryDetailAnchors(jquery_object) {
+  let urls = [];
+  for(var aa of $(jquery_object).find("td.order_id_.order_detail_").find("a")) {
+    urls.push(($(aa).attr('href')));
+  }
+  return urls;
+}
 
 async function crawlHistory(page, itemsPerPage) {
+  return getContentViaAjax(
+    "/catalog/customer/history.aspx", 
+    { p: page, ps: itemsPerPage}, getHistoryDetailAnchors);
+}
+
+async function crawlHistory2(page, itemsPerPage) {
   var urls = []
 
   /*
