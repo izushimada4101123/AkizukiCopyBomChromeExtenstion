@@ -7,12 +7,9 @@
       "128": "128.png"
     },
     "permissions": [
-      "unlimitedStorage",
       "notifications",
       "clipboardWrite",
       "tabs",
-      "storage",
-      "tabGroups",
       "contextMenus"
     ],
     "content_scripts": [{

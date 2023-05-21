@@ -133,30 +133,6 @@ async function crawlHistory(page, itemsPerPage) {
     { p: page, ps: itemsPerPage}, getHistoryDetailAnchors);
 }
 
-async function crawlHistory2(page, itemsPerPage) {
-  var urls = []
-
-  /*
-  function setUrls(uu) {
-    urls.push(uu);
-  }
-  */
-
-  await $.ajax({
-    type: "GET",
-    url: "/catalog/customer/history.aspx",
-    data: { p: page, ps: itemsPerPage}
-   }).done(
-      async msg => {
-        for(var aa of $(msg).find("td.order_id_.order_detail_").find("a")) {
-          urls.push(($(aa).attr('href')));
-        }
-      }
-   );
-
-  return urls;
-}
-
 async function copyHistoryItems(tab) {
   let items = $("td.order_id_.order_detail_").find("a")
 
@@ -176,15 +152,6 @@ async function copyHistoryItems(tab) {
   }
 //  console.log(result);
   navigator.clipboard.writeText(result);
-/*
-  var urls = [];
-  for(var item of items) {
-    url = $(item).attr("href");
-    urls.push(url);
-    console.log(url);
-  }
-  sendMessage({"anchors":urls, "tab":tab}, "openURL");
-  */
   return true;
 }
 
@@ -226,15 +193,3 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       break;
   }
 });
-
-/*
-chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
-  console.log("contents");
-  // make sure the status is 'complete' and it's the right tab
-  if (tab.url.indexOf('127.0.0.1:8000') != -1 && changeInfo.status == 'complete') {
-      chrome.tabs.executeScript(null, { 
-          code: "alert('hi');" 
-      });
-  }
-});
-*/
