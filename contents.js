@@ -2,8 +2,10 @@ const pathname = document.location.pathname;
 const pathname_fields = pathname?.split("/");
 const hostURL = document.location.origin;
 
-async function parseHistory1Item(jquery_object) {
-//    let result_header = "発注日\tOrderID\tOrderURL\t通販コード\t通販コードURL\t商品名\t数量\t単位\t金額\n"
+const history_detail_header = "発注日\tOrderID\tOrderURL\t通販コード\t通販コードURL\t商品名\t数量\t単位\t金額\n"
+
+// parse History Detail from jquery_object
+async function parseHistoryDetail(jquery_object) {
   let result = ""
 
   const order_id_anchor = await jquery_object.find('.order_info_.boder_none_ td.order_list_ a');
@@ -11,8 +13,8 @@ async function parseHistory1Item(jquery_object) {
   const order_date =
     await jquery_object.find('span.history_title_').parent().first().clone().children().remove().end().text();
 
-  for(var index=1;index<trs.length;index++) {
-    tds = $(trs[index]).find('td');
+  for(const tr of trs.slice(1)) {
+    const tds = $(tr).find('td');
     result += (
       order_date +
       "\t" + $(order_id_anchor).text() +
@@ -26,37 +28,21 @@ async function parseHistory1Item(jquery_object) {
       "\n"
     )
   }
-
 //  console.log(result);
   return result;
 }
 
-async function copyHistory1Items(append=false, tab) {
-    let result_header = "発注日\tOrderID\tOrderURL\t通販コード\t通販コードURL\t商品名\t数量\t単位\t金額\n"
-    let result = ""
-
-    result = await parseHistory1Item($(document))
-
-    if (append) {
-//      console.log("append");
-      sendMessage({"tab": tab, "header": result_header, "items": result, "id": $(order_id_anchor).text()}, "items");
-    } else {
-      await navigator.clipboard.writeText(result_header + result);
-    }
-}
-
 // extract cart items and copy to clipboard
-function parseCartItems(jquery_object) {
-  // https://akizukidenshi.com/catalog/cart/cart.aspx
-  var rows = jquery_object.find(".cart_table")
+async function parseCartItems(jquery_object) {
+  const rows = jquery_object.find(".cart_table")
               .first()
               .find("tr > .cart_tdl")
               .filter(function() {return $.trim($(this).text()) !== "";})
               .parent();
 
-  result = "通販コード\t商品名\t単価\t数量\t単位\t合計\n";
-  for(var row of rows) {
-    tds = $(row).find("td");
+  let result = "通販コード\t商品名\t単価\t数量\t単位\t合計\n";
+  for(const row of rows) {
+    const tds = $(row).find("td");
     result += (
       hostURL + $(tds[0]).find('a').attr('href') +
       "\t" + $(tds[1]).find('a').filter(function() {return $.trim($(this).text()) !== "";}).text() +
@@ -67,20 +53,12 @@ function parseCartItems(jquery_object) {
       "\n"
     )
   }
-
-//  console.log(result);
-
-  navigator.clipboard.writeText(result);
-}
-
-// copy cartItems
-async function getCartItems() {
-  return getContentViaAjax("/catalog/cart/cart.aspx", {}, parseCartItems);
+  return result;
 }
 
 // ajax function
 async function getContentViaAjax(url, data, parse_func, func_argument=null) {
-  var result = "";
+  let result = "";
   await $.ajax({
     type: "GET",
     url: url,
@@ -96,9 +74,9 @@ async function getContentViaAjax(url, data, parse_func, func_argument=null) {
 
 // craw 1 item
 async function crawlItems(order_id) {
-  return getContentViaAjax(
+  return await getContentViaAjax(
     "/catalog/customer/historydetail.aspx",{ "order_id": order_id}, 
-    parseHistory1Item);
+    parseHistoryDetail);
 }
 
 // extract HistoryDetailAnchors from History list
@@ -110,28 +88,51 @@ function getHistoryDetailAnchors(jquery_object) {
   return urls;
 }
 
+// 
+async function getAllHistoryDetails() {
+  return getContentViaAjax(
+    "/catalog/customer/history.aspx", 
+    {}, copyHistoryItems);
+}
+
+async function getHistoryDetailsOnThisPage(location_path) {
+  copyHistoryItems($(document),["this_page_only"]);
+}
+
 // crawl history page
 async function crawlHistory(page, itemsPerPage) {
   return getContentViaAjax(
     "/catalog/customer/history.aspx", 
-    { p: page, ps: itemsPerPage}, getHistoryDetailAnchors);
+    { p: page, ps: itemsPerPage }, getHistoryDetailAnchors);
+}
+
+// copy 1 History Detail
+async function copy1HistoryDetail() {
+  let result = await parseHistoryDetail($(document))
+  navigator.clipboard.writeText(history_detail_header + result);
+}
+
+// copy cartItems
+async function copyCartItems() {
+  const result = await getContentViaAjax("/catalog/cart/cart.aspx", {}, parseCartItems);
+  navigator.clipboard.writeText(result);
 }
 
 // copy items on history list page
-async function copyHistoryItems(jquery_object, argument) {
-  let items = jquery_object.find("td.order_id_.order_detail_").find("a")
-
-  let lastHistory = jquery_object.find(".navipage_").first().find("a").last().attr('href');
-  let matched = lastHistory.match(/.+p=([0-9]+).+ps=([0-9]+).*/)
-  let maxPage = 0+matched[1];
-  let itemsPerPage = 0+matched[2];
+async function copyHistoryItems(jquery_object, argument=[]) {
+  const lastHistory = jquery_object.find(".navipage_").first().find("a").last().attr('href');
+  const matched = lastHistory.match(/.+p=([0-9]+).+ps=([0-9]+).*/)
+  const maxPage = 0+matched[1];
+  const itemsPerPage = 0+matched[2];
   
-  var result = "";
+  let result = "";
   if (argument?.length > 0) {
     if (argument[0] == "this_page_only") {
       for(let url of getHistoryDetailAnchors(jquery_object)) {
-        aaa = url.match(/.+order_id=(.+)$/);
-        result += await crawlItems(aaa[1]);
+        const matched = url.match(/.+order_id=(.+)$/);
+        if (matched) {
+          result += await crawlItems(matched[1]);
+        }
       }
     }
   } else {
@@ -139,58 +140,37 @@ async function copyHistoryItems(jquery_object, argument) {
       let urls = await crawlHistory(page, itemsPerPage);
   
       for(var url of urls) {
-        aaa = url.match(/.+order_id=(.+)$/);
-        result += await crawlItems(aaa[1]);
+        const matched = url.match(/.+order_id=(.+)$/);
+        if (matched) {
+          result += await crawlItems(matched[1]);
+        }
       }
     }
   }
-//  console.log(result);
-  navigator.clipboard.writeText(result);
+  navigator.clipboard.writeText(history_detail_header + result);
   return true;
 }
 
-async function getAllHistoryItems() {
-  return getContentViaAjax(
-    "/catalog/customer/history.aspx", 
-    {}, copyHistoryItems);
-}
-
-async function getHistoryItemsThisPage(location_path) {
-  copyHistoryItems($(document),["this_page_only"]);
-}
-
-async function sendMessage(info, messageType) {
-  try {
-    const response = await chrome.runtime.sendMessage({
-      type: messageType,
-      payload: info
-    });
-    console.log(response);
-    return true;
-  } catch (error) {
-    console.log(error);
-    return false;
-  }
-}
-
-function writeToClipboard(request) {
-  console.log(request);
-  navigator.clipboard.writeText(request.payload.items);
-}
-
+// handle context menu event
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   switch(request?.type) {
     case "copyHistory1Items":
-      copyHistory1Items();
+      copy1HistoryDetail();
       break;
     case "copyCartItems":
-      getCartItems();
+      copyCartItems();
       break;
     case "copyAllHistoryItems":
-      getAllHistoryItems();
+      getAllHistoryDetails();
       break;
    case "copyHistoryItemsThisPage":
-      getHistoryItemsThisPage(document.location.pathname)
+      getHistoryDetailsOnThisPage(document.location.pathname)
       break;
   }
 });
+
+// check login or not
+function checkLoggingin() {
+  const logout_anchor = $(document).find("div.header-sub").find("a[href*=logout.aspx]") 
+  return logout_anchor.length > 0;
+}

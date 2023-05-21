@@ -6,7 +6,6 @@ async function copyItems(tab, info, messageType) {
       payload: info,
       tab: tab
     });
-    console.log(response);
     return true;
   } catch (error) {
     console.log(error);
