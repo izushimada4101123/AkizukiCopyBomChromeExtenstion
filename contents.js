@@ -79,14 +79,15 @@ async function getCatItems() {
 }
 
 // ajax function
-async function getContentViaAjax(url, data, parse_func) {
+async function getContentViaAjax(url, data, parse_func, func_argument=null) {
+  var result = "";
   await $.ajax({
     type: "GET",
     url: url,
     data: data,
   }).done(
     async msg => {
-      result = await parse_func($(msg));
+      result = await parse_func($(msg), func_argument);
     }
   );
 
@@ -117,26 +118,45 @@ async function crawlHistory(page, itemsPerPage) {
 }
 
 //
-async function copyHistoryItems(tab) {
-  let items = $("td.order_id_.order_detail_").find("a")
+async function copyHistoryItems(jquery_object, argument) {
+  let items = jquery_object.find("td.order_id_.order_detail_").find("a")
 
-  let lastHistory = $(".navipage_").first().find("a").last().attr('href');
+  let lastHistory = jquery_object.find(".navipage_").first().find("a").last().attr('href');
   let matched = lastHistory.match(/.+p=([0-9]+).+ps=([0-9]+).*/)
   let maxPage = 0+matched[1];
   let itemsPerPage = 0+matched[2];
-
+  
   var result = "";
-  for(var page=1; page <= maxPage; page++) {
-    urls = await crawlHistory(page, itemsPerPage);
-
-    for(var url of urls) {
-      aaa = url.match(/.+order_id=(.+)$/);
-      result += await crawlItems(aaa[1]);
+  if (argument?.length > 0) {
+    if (argument[0] == "this_page_only") {
+      for(let url of getHistoryDetailAnchors(jquery_object)) {
+        aaa = url.match(/.+order_id=(.+)$/);
+        result += await crawlItems(aaa[1]);
+      }
+    }
+  } else {
+    for(var page=1; page <= maxPage; page++) {
+      let urls = await crawlHistory(page, itemsPerPage);
+  
+      for(var url of urls) {
+        aaa = url.match(/.+order_id=(.+)$/);
+        result += await crawlItems(aaa[1]);
+      }
     }
   }
 //  console.log(result);
   navigator.clipboard.writeText(result);
   return true;
+}
+
+async function getAllHistoryItems() {
+  return getContentViaAjax(
+    "/catalog/customer/history.aspx", 
+    {}, copyHistoryItems);
+}
+
+async function getHistoryItemsThisPage(location_path) {
+  copyHistoryItems($(document),["this_page_only"]);
 }
 
 async function sendMessage(info, messageType) {
@@ -169,11 +189,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
      case "copyCartItems":
         getCatItems();
       break;
-    case "copyHistoryItems":
-      copyHistoryItems(request?.tab);
+    case "copyAllHistoryItems":
+        getAllHistoryItems();
       break;
     case "gatheredItems":
       writeToClipboard(request);
+      break;
+    case "copyHistoryItemsThisPage":
+      getHistoryItemsThisPage(document.location.pathname)
       break;
   }
 });

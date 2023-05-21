@@ -14,8 +14,7 @@
     ],
     "content_scripts": [{
       "matches": [
-        "https://akizukidenshi.com/catalog/customer/*",
-        "https://akizukidenshi.com/catalog/cart/*"
+        "https://akizukidenshi.com/*"
       ],
       "js": [
         "lib.js",
