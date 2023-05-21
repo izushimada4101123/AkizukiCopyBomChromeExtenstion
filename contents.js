@@ -46,7 +46,7 @@ async function copyHistory1Items(append=false, tab) {
 }
 
 // extract cart items and copy to clipboard
-function copyCartItems(jquery_object) {
+function parseCartItems(jquery_object) {
   // https://akizukidenshi.com/catalog/cart/cart.aspx
   var rows = jquery_object.find(".cart_table")
               .first()
@@ -74,8 +74,8 @@ function copyCartItems(jquery_object) {
 }
 
 // copy cartItems
-async function getCatItems() {
-  return getContentViaAjax("/catalog/cart/cart.aspx", {}, copyCartItems);
+async function getCartItems() {
+  return getContentViaAjax("/catalog/cart/cart.aspx", {}, parseCartItems);
 }
 
 // ajax function
@@ -117,7 +117,7 @@ async function crawlHistory(page, itemsPerPage) {
     { p: page, ps: itemsPerPage}, getHistoryDetailAnchors);
 }
 
-//
+// copy items on history list page
 async function copyHistoryItems(jquery_object, argument) {
   let items = jquery_object.find("td.order_id_.order_detail_").find("a")
 
@@ -183,19 +183,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     case "copyHistory1Items":
       copyHistory1Items();
       break;
-    case "copyHistory1ItemsAdd":
-      copyHistory1Items(true, request?.tab);
-      break;
-     case "copyCartItems":
-        getCatItems();
+    case "copyCartItems":
+      getCartItems();
       break;
     case "copyAllHistoryItems":
-        getAllHistoryItems();
+      getAllHistoryItems();
       break;
-    case "gatheredItems":
-      writeToClipboard(request);
-      break;
-    case "copyHistoryItemsThisPage":
+   case "copyHistoryItemsThisPage":
       getHistoryItemsThisPage(document.location.pathname)
       break;
   }
