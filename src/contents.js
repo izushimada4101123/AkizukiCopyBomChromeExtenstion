@@ -155,22 +155,34 @@ async function copyHistoryItems(jquery_object, argument=[]) {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   switch(request?.type) {
     case "copyHistory1Items":
-      copy1HistoryDetail();
+      if (!checkLoggingIn()) {
+        alert("ログインしないと使えません");
+      } else {
+        copy1HistoryDetail();
+      }
       break;
     case "copyCartItems":
       copyCartItems();
       break;
     case "copyAllHistoryItems":
-      getAllHistoryDetails();
+      if (!checkLoggingIn()) {
+        alert("ログインしないと使えません");
+      } else {
+        getAllHistoryDetails();
+      }
       break;
    case "copyHistoryItemsThisPage":
-      getHistoryDetailsOnThisPage(document.location.pathname)
+      if (!checkLoggingIn()) {
+        alert("ログインしないと使えません");
+      } else {
+        getHistoryDetailsOnThisPage(document.location.pathname)
+      }
       break;
   }
 });
 
 // check login or not
-function checkLoggingin() {
-  const logout_anchor = $(document).find("div.header-sub").find("a[href*=logout.aspx]") 
+function checkLoggingIn() {
+  const logout_anchor = $(document).find("div.header-sub").find("a[href*='logout.aspx']");
   return logout_anchor.length > 0;
 }
