@@ -26,6 +26,11 @@ const menuItemData = [
     urlPattern: "https://akizukidenshi.com/*"
   },
   {
+    id: "copyBookmarkItems",
+    title: "お気に入りの中味をコピー",
+    urlPattern: "https://akizukidenshi.com/*"
+  },
+  {
     id: "copyAllHistoryItems",
     title: "過去の履歴をすべてコピー",
     urlPattern: "https://akizukidenshi.com/*"
@@ -56,6 +61,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     case "copyHistory1Items":
     case "copyHistoryItemsThisPage":
     case "copyAllHistoryItems":
+    case "copyBookmarkItems":
       copyItems(tab, info, info.menuItemId);
       break;
     default:

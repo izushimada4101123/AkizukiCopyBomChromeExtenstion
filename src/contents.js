@@ -175,7 +175,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (!checkLoggingIn()) {
         alert("ログインしないと使えません");
       } else {
-        getHistoryDetailsOnThisPage(document.location.pathname)
+        getHistoryDetailsOnThisPage(document.location.pathname);
+      }
+      break;
+   case "copyBookmarkItems":
+      if (!checkLoggingIn()) {
+        alert("ログインしないと使えません");
+      } else {
+        copyBookmarkItems();
       }
       break;
   }
@@ -185,4 +192,43 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 function checkLoggingIn() {
   const logout_anchor = $(document).find("div.header-sub").find("a[href*='logout.aspx']");
   return logout_anchor.length > 0;
+}
+
+async function getBookmarkItems() {
+  const tables = $(document).find('form[action*="bookmark.aspx"]').find("table");
+
+  let result = "更新日\t通販コード\t通販URL\t商品名\t単位\t金額\tコメント\n"
+  for(let i = 0; i < tables.length-1; i++) {
+    const anchor = $(tables[i]).find("a.goods_name_");
+    const comment = $(tables[i]).find(".comment_ input").attr("value");
+    const updatedOn = $(tables[i]).find(".updt_").text().replaceAll("\t","").replaceAll("\n", "").match(/^[^:]+[: ]+(.+)$/)[1];
+    const price_ = $($(tables[i]).find("tr")[1]).find("span").text().match(/^(.+) ¥([0-9,]+)$/);
+
+    // updated, code , url, name
+    let row = [
+      updatedOn, anchor.attr("href").match(/([^\/]+)\/$/)[1],
+      location.origin + anchor.attr("href"), anchor.text() ];
+
+    if (price_ && price_.length >= 3) {
+      row.push(price_[1]); // unit
+      row.push(price_[2].replaceAll(",",""))  // unit price
+    } else {
+      row.push("");
+      row.push("");
+    }
+
+    row.push(comment);
+
+    result += (row.join('\t') + '\n');
+  }
+
+  return result;
+}
+
+// craw 1 item
+async function copyBookmarkItems(order_id) {
+  const result = await getContentViaAjax(
+    "/catalog/customer/bookmark.aspx", {},
+    getBookmarkItems);
+  navigator.clipboard.writeText(result); 
 }
