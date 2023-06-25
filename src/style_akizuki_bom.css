@@ -1,0 +1,16 @@
+#alert{
+    position:absolute;
+    z-index:10000;
+    top:0;
+    left:0;
+    border:solid 3px #aaa;
+    background: #FDE1F4;
+    display:block;
+    width:400px;
+    height:100px;
+    padding:20px;
+    line-height:200px;
+    text-align:center;
+    font-size:32px;
+    font-weight:bold;
+}

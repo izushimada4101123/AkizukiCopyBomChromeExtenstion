@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "Akizuki BOM",
     "description": "copy Akizuki Bom in cart, purchase history",
-    "version": "0.92",
+    "version": "0.93",
     "icons": {
       "128": "128.png"
     },
@@ -20,7 +20,10 @@
         "lib.js",
         "jquery-3.6.4.min.js",
         "contents.js"
-      ] 
+      ],
+      "css": [
+        "style_akizuki_bom.css"
+      ]
     }],
     "background": {
       "service_worker": "background.js"

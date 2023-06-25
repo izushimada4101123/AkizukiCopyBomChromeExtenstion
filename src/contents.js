@@ -108,18 +108,25 @@ async function crawlHistory(page, itemsPerPage) {
 
 // copy 1 History Detail
 async function copy1HistoryDetail() {
+  showAlert("現在取得しています\nしばらくお待ちください");
   let result = await parseHistoryDetail($(document))
+  setAlertString("クリップボードに<br/>コピー完了");
+  hideAlert();
   navigator.clipboard.writeText(history_detail_header + result);
 }
 
 // copy cartItems
 async function copyCartItems() {
+  showAlert("現在取得しています\nしばらくお待ちください");
   const result = await getContentViaAjax("/catalog/cart/cart.aspx", {}, parseCartItems);
+  setAlertString("クリップボードに<br/>コピー完了");
+  hideAlert();
   navigator.clipboard.writeText(result);
 }
 
 // copy items on history list page
 async function copyHistoryItems(jquery_object, argument=[]) {
+  showAlert("現在取得しています\nしばらくお待ちください");
   const lastHistory = jquery_object.find(".navipage_").first().find("a").last().attr('href');
   const matched = lastHistory.match(/.+p=([0-9]+).+ps=([0-9]+).*/)
   const maxPage = 0+matched[1];
@@ -147,6 +154,8 @@ async function copyHistoryItems(jquery_object, argument=[]) {
       }
     }
   }
+  setAlertString("クリップボードに<br/>コピー完了");
+  hideAlert();
   navigator.clipboard.writeText(history_detail_header + result);
   return true;
 }
@@ -194,8 +203,9 @@ function checkLoggingIn() {
   return logout_anchor.length > 0;
 }
 
-async function getBookmarkItems() {
-  const tables = $(document).find('form[action*="bookmark.aspx"]').find("table");
+// get bookmark(favorite) items
+async function getBookmarkItems(jquery_object) {
+  const tables = jquery_object.find('form[action*="bookmark.aspx"]').find("table");
 
   let result = "更新日\t通販コード\t通販URL\t商品名\t単位\t金額\tコメント\n"
   for(let i = 0; i < tables.length-1; i++) {
@@ -227,8 +237,37 @@ async function getBookmarkItems() {
 
 // craw 1 item
 async function copyBookmarkItems(order_id) {
+  showAlert("現在取得しています\nしばらくお待ちください");
   const result = await getContentViaAjax(
     "/catalog/customer/bookmark.aspx", {},
     getBookmarkItems);
+  setAlertString("クリップボードに<br/>コピー完了");
+  hideAlert();
   navigator.clipboard.writeText(result); 
+}
+
+// show "non-standard" alert window
+async function showAlert(str) {
+  const countNewline = Math.max(1, ( str.match( /\n/g ) || [] ).length);
+  $("body").append(`<div id="alert" class="grad">${str.replaceAll("\n", "<br/>")}</div>`);
+  var $ah = $("#alert").height();
+  var $aw = $("#alert").width();
+  var $top = $(window).height()/2-$ah/2;
+  var $left = $(window).width()/2-$aw/2;
+  $("#alert").css({"top":$top,"left":$left,"opacity":0, "line-height":`${($ah)/(countNewline+1)}px`}).animate({"opacity":1},500);
+}
+
+// set alert string
+function setAlertString(str) {
+  $("body div#alert").html(str.replaceAll("\n", "<br/>"));
+}
+
+// hide alert
+async function hideAlert() {
+  setTimeout(function(){
+  $("#alert").delay(1000).animate({"opacity":0},500,function(){
+  $(this).remove();
+  $("body").css("overflow","auto");
+  });
+  },200);
 }
