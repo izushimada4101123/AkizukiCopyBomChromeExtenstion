@@ -199,7 +199,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // check login or not
 function checkLoggingIn() {
-  const logout_anchor = $(document).find("div.header-sub").find("a[href*='logout.aspx']");
+  let logout_anchor = null;
+  if (navigator.userAgent.match("Edg")) {
+    // Edge
+    logout_anchor = $("div#header table form a[href*='logout.aspx']");
+  } else {
+    // chrome
+    logout_anchor = $("div.header-sub a[href*='logout.aspx']");
+  }
+
   return logout_anchor.length > 0;
 }
 
