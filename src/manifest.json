@@ -2,14 +2,12 @@
     "manifest_version": 3,
     "name": "Akizuki BOM",
     "description": "copy Akizuki Bom in cart, favorite items and purchase history",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "icons": {
       "128": "128.png"
     },
     "permissions": [
-      "notifications",
       "clipboardWrite",
-      "tabs",
       "contextMenus"
     ],
     "content_scripts": [{
