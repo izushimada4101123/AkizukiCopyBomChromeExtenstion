@@ -8,23 +8,25 @@ const history_detail_header = "発注日\tOrderID\tOrderURL\t通販コード\t�
 async function parseHistoryDetail(jquery_object) {
   let result = ""
 
-  const order_id_anchor = await jquery_object.find('.order_info_.boder_none_ td.order_list_ a');
-  const trs = await jquery_object.find('.history_loop_').not('.order_total_').first().find('tr');
+  const order_id = await jquery_object.find('td.block-purchase-history-detail--order-id').text();
+  const trs = await jquery_object.find('table.table.block-purchase-history-detail--order-detail-items tbody tr');
   const order_date =
-    await jquery_object.find('span.history_title_').parent().first().clone().children().remove().end().text();
+    await jquery_object.find('td.block-purchase-history-detail--order-dt').text();
 
-  for(const tr of trs.slice(1)) {
+  for(const tr of trs) {
     const tds = $(tr).find('td');
+    part_id = $(tds[0]).text();
+    unit = $(tds[1]).find('div.block-goods-sales_unit').text().match(/([0-9,]+)/g);
     result += (
       order_date +
-      "\t" + $(order_id_anchor).text() +
+      "\t" + order_id +
       "\t" + location.href +
-      "\t" + $(tds[0]).find('a').attr('href').split('/').slice(-2,-1) +
-      "\t" + hostURL + $(tds[0]).find('a').attr('href') +
-      "\t" + $(tds[1]).text() +
-      "\t" + /([0-9,]+)(.+)/.exec($(tds[2]).text().replaceAll(",",""))[1] +
-      "\t" + /([0-9,]+)(.+)/.exec($(tds[2]).text().replaceAll(",",""))[2] +
-      "\t" + /([0-9,]+)(.+)/.exec($(tds[3]).text().replaceAll(",",""))[0] +
+      "\t" + part_id + 
+      "\t" + "https://akizukidenshi.com/catalog/g/g" + part_id +
+      "\t" + $(tds[1]).find('div.block-purchase-history-detail--goods-name').text() +
+      "\t" + $(tds[2]).text() +
+      "\t" + ((unit.length>1)?unit[1]:unit[0]) +
+      "\t" + /([0-9,]+)/.exec($(tds[3]).text().replaceAll(",",""))[0] +
       "\n"
     )
   }
