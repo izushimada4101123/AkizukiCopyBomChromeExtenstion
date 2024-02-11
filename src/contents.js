@@ -34,22 +34,24 @@ async function parseHistoryDetail(jquery_object) {
 
 // extract cart items and copy to clipboard
 async function parseCartItems(jquery_object) {
-  const rows = jquery_object.find(".cart_table")
+  const rows = jquery_object.find(".block-cart--contents--table")
               .first()
-              .find("tr > .cart_tdl")
-              .filter(function() {return $.trim($(this).text()) !== "";})
-              .parent();
+              .find(".block-cart--goods-list")
 
   let result = "通販コード\t商品名\t単価\t数量\t単位\t合計\n";
   for(const row of rows) {
     const tds = $(row).find("td");
+    const unit_price = parseInt(/[0-9,]+/.exec($(tds[2]).find('p').text())[0]);
+    const count = parseInt($(tds[3]).find('input').val());
+    const unit_ = $(tds[1]).clone().find(".block-goods-sales_unit").text().match(/[0-9,]+/g);
+    const unit = unit_.length>1?unit_[1]:unit_[0];
     result += (
       hostURL + $(tds[0]).find('a').attr('href') +
       "\t" + $(tds[1]).find('a').filter(function() {return $.trim($(this).text()) !== "";}).text() +
-      "\t" + /[0-9,]+/.exec($(tds[2]).find('span').text())[0] +
-      "\t" + $(tds[3]).find('input').val() +
-      "\t" + $(tds[3]).clone().children().remove().end().text().trim() +
-      "\t" + /[0-9,]+/.exec($(tds[4]).find('span').text())[0] +
+      "\t" + unit_price +
+      "\t" + count +
+      "\t" + unit +
+      "\t" + unit_price * count +
       "\n"
     )
   }
@@ -75,7 +77,7 @@ async function getContentViaAjax(url, data, parse_func, func_argument=null) {
 // craw 1 item
 async function crawlItems(order_id) {
   return await getContentViaAjax(
-    "/catalog/customer/historydetail.aspx",{ "order_id": order_id}, 
+    "/catalog/customer/historydetail.aspx",{ "order_id": order_id},
     parseHistoryDetail);
 }
 
@@ -88,10 +90,10 @@ function getHistoryDetailAnchors(jquery_object) {
   return urls;
 }
 
-// 
+//
 async function getAllHistoryDetails() {
   return getContentViaAjax(
-    "/catalog/customer/history.aspx", 
+    "/catalog/customer/history.aspx",
     {}, copyHistoryItems);
 }
 
@@ -102,7 +104,7 @@ async function getHistoryDetailsOnThisPage(location_path) {
 // crawl history page
 async function crawlHistory(page, itemsPerPage) {
   return getContentViaAjax(
-    "/catalog/customer/history.aspx", 
+    "/catalog/customer/history.aspx",
     { p: page, ps: itemsPerPage }, getHistoryDetailAnchors);
 }
 
@@ -131,7 +133,7 @@ async function copyHistoryItems(jquery_object, argument=[]) {
   const matched = lastHistory.match(/.+p=([0-9]+).+ps=([0-9]+).*/)
   const maxPage = 0+matched[1];
   const itemsPerPage = 0+matched[2];
-  
+
   let result = "";
   if (argument?.length > 0) {
     if (argument[0] == "this_page_only") {
@@ -145,7 +147,7 @@ async function copyHistoryItems(jquery_object, argument=[]) {
   } else {
     for(var page=1; page <= maxPage; page++) {
       let urls = await crawlHistory(page, itemsPerPage);
-  
+
       for(var url of urls) {
         const matched = url.match(/.+order_id=(.+)$/);
         if (matched) {
@@ -199,37 +201,38 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // check login or not
 function checkLoggingIn() {
-  let logout_anchor = null;
+  let login_img = null;
   if (navigator.userAgent.match("Edg")) {
     // Edge
-    logout_anchor = $("div#header table form a[href*='logout.aspx']");
+    login_img = $('img[src*="gnav_mypage.png"]');
   } else {
     // chrome
-    logout_anchor = $("div.header-sub a[href*='logout.aspx']");
+    login_img = $('img[src*="gnav_mypage.png"]');
   }
 
-  return logout_anchor.length > 0;
+  return login_img.length > 0;
 }
 
 // get bookmark(favorite) items
 async function getBookmarkItems(jquery_object) {
-  const tables = jquery_object.find('form[action*="bookmark.aspx"]').find("table");
+  const tables = jquery_object.find('form[action*="bookmark.aspx"]').find('li.js-enhanced-ecommerce-item')
 
   let result = "更新日\t通販コード\t通販URL\t商品名\t単位\t金額\tコメント\n"
   for(let i = 0; i < tables.length-1; i++) {
-    const anchor = $(tables[i]).find("a.goods_name_");
-    const comment = $(tables[i]).find(".comment_ input").attr("value");
-    const updatedOn = $(tables[i]).find(".updt_").text().replaceAll("\t","").replaceAll("\n", "").match(/^[^:]+[: ]+(.+)$/)[1];
-    const price_ = $($(tables[i]).find("tr")[1]).find("span").text().match(/^(.+) ¥([0-9,]+)$/);
+    const anchor = $(tables[i]).find("a.js-enhanced-ecommerce-goods-name");
+    const comment = $(tables[i]).find("div.block-favorite--comment-message").text();
+    const updatedOn = $(tables[i]).find("dl.block-favorite--update-dt dd").text();
+    const unit = $(tables[i]).find("div.block-favorite--sales_qty").text().match(/([0-9,]+)/g)
+    const price_ = $(tables[i]).find("div.block-favorite--price.price.js-enhanced-ecommerce-goods-price").text().match(/([0-9,]+)/)[0];
 
     // updated, code , url, name
     let row = [
       updatedOn, anchor.attr("href").match(/([^\/]+)\/$/)[1],
       location.origin + anchor.attr("href"), anchor.text() ];
 
-    if (price_ && price_.length >= 3) {
-      row.push(price_[1]); // unit
-      row.push(price_[2].replaceAll(",",""))  // unit price
+    if (unit) {
+      row.push(unit.length>1?unit[1]:unit[0]); // unit
+      row.push(price_)  // unit price
     } else {
       row.push("");
       row.push("");
@@ -251,7 +254,7 @@ async function copyBookmarkItems(order_id) {
     getBookmarkItems);
   setAlertString("クリップボードに<br/>コピー完了");
   hideAlert();
-  navigator.clipboard.writeText(result); 
+  navigator.clipboard.writeText(result);
 }
 
 // show "non-standard" alert window
