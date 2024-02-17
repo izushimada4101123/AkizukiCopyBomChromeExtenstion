@@ -30,11 +30,13 @@ const menuItemData = [
     title: "お気に入りの中味をコピー",
     urlPattern: "https://akizukidenshi.com/*"
   },
+  /*
   {
     id: "copyAllHistoryItems",
     title: "過去の履歴をすべてコピー",
     urlPattern: "https://akizukidenshi.com/*"
   },
+  */
   {
     id: "copyHistoryItemsThisPage",
     title: "このページの履歴をコピー",
