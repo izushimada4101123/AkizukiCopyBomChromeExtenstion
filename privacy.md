@@ -1,4 +1,4 @@
-# Privacy policy for Chrome extensions developed by G
+# Privacy policy for Chrome extensions AkizukiBOM
 ## Chrome拡張のプライバシーポリシー
 
 本プライバシーポリシーは、GoogleChromeの拡張機能(AkizukiBom)の利用において、利用者の個人情報もしくはそれに準ずる情報を取り扱う際に、本機能拡張が遵守する方針を示したものです。
